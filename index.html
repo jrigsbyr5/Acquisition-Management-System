@@ -1261,6 +1261,9 @@
     renderNotebook();
     updateAddToNotebookBtn();
   }
+  function removePropertyByEl(btn) {
+    removeProperty(btn.dataset.addr);
+  }
 
   function saveScenarioToNotebook() {
     if (!currentParcel) return;
@@ -1316,7 +1319,7 @@
       const meta = (p.zoning || '—') + ' · Score ' + (p.development_intensity_score ?? '—') + '/10';
       return '<div class="nb-property-card">'
         + '<div><div class="nb-prop-address">' + addr + '</div><div class="nb-prop-meta">' + meta + '</div></div>'
-        + '<button class="nb-prop-remove" onclick="removeProperty('' + addr.replace(/'/g, "\'") + '')">✕</button>'
+        + '<button class="nb-prop-remove" onclick="removePropertyByEl(this)" data-addr="' + addr.replace(/"/g, '&quot;') + '">✕</button>'
         + '</div>';
     }).join('');
 
