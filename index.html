@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Development Management System</title>
+  <title>Alterra</title>
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js">
   // PRICING MAP
   let pricingMap = null;
@@ -471,8 +471,8 @@
 <body>
 
 <div id="topbar">
-  <span style="font-weight: 300; letter-spacing: 0.22em; text-transform: uppercase; font-size: 17px;">LAND MSD</span>
-<span style="font-size: 13px; color: #555; letter-spacing: 0.04em; font-weight: 400;">Land Management System &nbsp;—&nbsp; somthing later</span>
+  <span style="font-weight: 300; letter-spacing: 0.22em; text-transform: uppercase; font-size: 17px;">ALTERRA</span>
+<span style="font-size: 13px; color: #555; letter-spacing: 0.04em; font-weight: 400;">Acquisition Management System &nbsp;—&nbsp; Joshua Rigsby, University of Pennsylvania</span>
   <button class="nav-btn active" onclick="switchView('cost')">COST PROJECTION</button>
   <button class="nav-btn" onclick="switchView('activity')">MARKET ACTIVITY</button>
   <button class="nav-btn" onclick="switchView('pricing')">PRICING</button>
@@ -486,16 +486,16 @@
 <div id="about-page">
   <div id="about-topbar">
     <span class="at-title">About</span>
-    <span class="at-sub">LAND MSD &mdash; Philadelphia Development Intelligence</span>
+    <span class="at-sub">Land & Acquisition Management &mdash; Philadelphia Development Intelligence</span>
     <button id="about-back" onclick="closeAbout()">&#x2190; Back</button>
   </div>
   <div id="about-body">
-    <div class="about-section"><h3>Overview</h3><p>LAND MSD is a <strong>development intelligence platform</strong> built for Philadelphia land acquisition and feasibility analysis. It aggregates parcel-level zoning, cost modeling, and market data into a single spatial interface &mdash; designed for developers, planners, and investors who need to move fast on site decisions.</p></div>
-    <div class="about-section"><h3>Cost Projection</h3><p>The core view surfaces <strong>acquisition recommendations</strong> for every parcel in the city. Click any parcel to see lot dimensions, zoning capacity, FAR headroom, and a full development cost estimate &mdash; hard cost, soft cost, contingency, and total development basis. Use the <strong>Simulate Scenario</strong> tool to run custom assumptions and save them to your Notebook.</p></div>
-    <div class="about-section"><h3>Market Activity</h3><p>A heatmap of <strong>development permits and construction activity</strong> across Philadelphia by time period. Visualize where the market has moved across four eras: Pre-2010, 2010&ndash;2015, 2015&ndash;2020, and 2020&ndash;2025.</p></div>
-    <div class="about-section"><h3>Pricing</h3><p>Parcel-level <strong>price per square foot analysis</strong> for land sales, segmented by transaction type and time period. Identify underpriced corridors and track how land values have shifted across the city over two decades.</p></div>
+    <div class="about-section"><h3>Overview</h3><p>Alterra is a <strong>development intelligence platform</strong> built for Philadelphia land acquisition and financialfeasibility analysis. It aggregates parcel-level zoning, cost modeling, and market data into a single spatial interface &mdash; designed for developers, planners, and investors who want to leverage the power of data to forcast development scenarios and make land/building aquisition decisions.</p></div>
+    <div class="about-section"><h3>Cost Projection</h3><p>This interactive financial modeling and development forcasting tool delivers <strong>acquisition recommendations</strong> for every parcel in the city. By clicking any parcel lot dimensions, zoning capacity, FAR headroom, a full development cost estimate &mdash; hard cost, soft cost, contingency, and total development basis are calculated and available for use. The <strong>Simulate Scenario</strong> tool  can be used to run custom assumptions, making any portion of the financial model directly editable, enabling the survery of endless cost estimate scenarios per parcel.</p></div>
+    <div class="about-section"><h3>Market Activity</h3><p>A heatmap of <strong>development permitting and construction activity</strong> across Philadelphia by time period. Visualize where the market has moved across almost two decades. revealing inflection points where and when it made sense to buy property. This insight can guide future aquisition strategies as it reveals where these inflections points are headed.</p></div>
+    <div class="about-section"><h3>Pricing</h3><p>Tract-level <strong>price per square foot analysis</strong> for land sales, segmented by transaction type and time period. Identify underpriced sectors and track how land values have shifted across the city over almosttwo decades.</p></div>
     <div class="about-section"><h3>Data</h3><p>Built on Philadelphia OPA parcel data, L&amp;I permits, and market transaction records. Zoning and development capacity derived from Philadelphia&rsquo;s current zoning code.</p></div>
-    <div class="about-section"><h3>Stack</h3><span class="about-tag">Mapbox GL JS</span><span class="about-tag">Philadelphia OPA</span><span class="about-tag">L&amp;I Permits</span><span class="about-tag">GitHub Pages</span></div>
+    <div class="about-section"><h3>Stack</h3><span class="about-tag">Mapbox GL JS, Python</span><span class="about-tag">Philadelphia OPA</span><span class="about-tag">L&amp;I Permits</span><span class="about-tag">GitHub Pages</span></div>
   </div>
 </div>
 
@@ -620,8 +620,8 @@
       </div>
       <div id="panel-activity-body">
         <div class="activity-section-title">About This View</div>
-        <div class="activity-desc">Heatmap of development activity across Philadelphia parcels. Warmer colors indicate higher activity of construction, zoning changes, permiting and active development. Use the time period buttons above to compare development patterns across periods.</div>
-        <div class="activity-section-title">Legend - Development Intensity</div>
+        <div class="activity-desc">Heatmap of development activity across Philadelphia parcels. The map reflects construction and permitting/zoning activity relevant to actual development cycles per parcel. Warmer colors, reds and oranges, indicate a high degree of construction, zoning changes, permiting and active development. Use the time period buttons above to compare development patterns across periods, as the goal is to see where the market has moved, and where its heading, highlighting inflection points when it was feasible to buy a parce, so that future acquisition strategies can be informed.</div>
+        <div class="activity-section-title">Legend - Development Movement</div>
         <div class="heatmap-legend">
           <div class="grad"></div>
           <div class="leg-labels"><span>Low</span><span>High</span></div>
