@@ -192,7 +192,7 @@
     #main { display: flex; flex: 1; overflow: hidden; position: relative; }
     .view { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; }
     .view.active { display: block; }
-    #map, #map-activity, #map-pricing, #map-pricingmacro { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+    #map, #map-activity, #map-pricing { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
 
     #panel-left {
       position: absolute; top: 12px; left: 12px;
@@ -391,26 +391,6 @@
     .psf-history-row.phr-active .phr-period { color: #378ADD; }
     .psf-history-row.phr-active .phr-val { color: #378ADD; }
 
-    /* ── PRICING MACRO PANEL ── */
-    #panel-pricingmacro { position: absolute; top: 12px; right: 12px; bottom: 36px; width: 300px; background: #1c1c1e; border: 1px solid #2a2a2e; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; z-index: 10; }
-    #panel-pricingmacro-header { padding: 14px 16px; border-bottom: 1px solid #2a2a2e; flex-shrink: 0; }
-    #panel-pricingmacro-header .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
-    #panel-pricingmacro-header .title { font-size: 15px; font-weight: 500; color: #f0f0f0; }
-    #panel-pricingmacro-header .sub { font-size: 12px; color: #888; margin-top: 3px; }
-    #pricingmacro-controls { padding: 10px 14px; border-bottom: 1px solid #2a2a2e; flex-shrink: 0; }
-    #pricingmacro-controls .ctrl-label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 8px; }
-    #pricingmacro-controls .ctrl-label-2 { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin: 10px 0 8px; }
-    #panel-pricingmacro-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
-    #pricingmacro-tooltip {
-      position: absolute; pointer-events: none; z-index: 20;
-      background: rgba(22,22,24,0.95); border: 1px solid #2a2a2e;
-      border-radius: 7px; padding: 8px 12px; font-size: 12px; color: #e0e0e0;
-      max-width: 240px; line-height: 1.5; display: none;
-    }
-    #pricingmacro-tooltip .tt-address { font-weight: 500; color: #f0f0f0; }
-    #pricingmacro-tooltip .tt-psf { color: #378ADD; font-size: 13px; font-weight: 500; margin-top: 2px; }
-    #pricingmacro-tooltip .tt-count { color: #666; font-size: 11px; margin-top: 2px; }
-
     /* ── UTILITY BUTTONS ── */
     #topbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
     .util-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid #3a3a3e; font-size: 11px; font-weight: 500; cursor: pointer; letter-spacing: 0.06em; background: none; color: #aaa; transition: all 0.15s; text-transform: uppercase; }
@@ -495,8 +475,7 @@
 <span style="font-size: 13px; color: #555; letter-spacing: 0.04em; font-weight: 400;">Acquisition Management System &nbsp;—&nbsp; Joshua Rigsby, University of Pennsylvania</span>
   <button class="nav-btn active" onclick="switchView('cost')">COST PROJECTION</button>
   <button class="nav-btn" onclick="switchView('activity')">MARKET ACTIVITY</button>
-  <button class="nav-btn" onclick="switchView('pricing')">PRICING MICRO</button>
-  <button class="nav-btn" onclick="switchView('pricingmacro')">PRICING MACRO</button>
+  <button class="nav-btn" onclick="switchView('pricing')">PRICING</button>
   <div id="topbar-right">
     <button class="util-btn" onclick="openAbout()">About</button>
     <button class="util-btn nb-btn" onclick="openNotebook()">Notebook</button>
@@ -713,62 +692,6 @@
     </div>
   <div id="pricing-tooltip"><div class="tt-address" id="ptt-address"></div><div class="tt-psf" id="ptt-psf"></div></div>
   </div><!-- end view-pricing -->
-
-  <!-- PRICING MACRO VIEW -->
-  <div class="view" id="view-pricingmacro">
-    <div id="map-pricingmacro"></div>
-    <div id="panel-pricingmacro">
-      <div id="panel-pricingmacro-header">
-        <div class="label">Pricing Macro</div>
-        <div class="title">Tract-Level Price Per Sqft</div>
-        <div class="sub">Philadelphia — Land Values By Census Tract</div>
-      </div>
-      <div id="pricingmacro-controls">
-        <div class="ctrl-label">Time Period</div>
-        <div class="pricing-btns">
-          <button class="pricing-btn active" onclick="setMacroPeriod('pre2010', this)" data-macro-period="pre2010">Pre-2010</button>
-          <button class="pricing-btn" onclick="setMacroPeriod('20102015', this)" data-macro-period="20102015">2010–2015</button>
-          <button class="pricing-btn" onclick="setMacroPeriod('20152020', this)" data-macro-period="20152020">2015–2020</button>
-          <button class="pricing-btn" onclick="setMacroPeriod('20202025', this)" data-macro-period="20202025">2020–2025</button>
-        </div>
-        <div class="ctrl-label-2">Transaction Type</div>
-        <div class="pricing-btns">
-          <button class="pricing-btn active" onclick="setMacroType('vacant', this)" data-macro-type="vacant">Vacant Land</button>
-          <button class="pricing-btn" onclick="setMacroType('market', this)" data-macro-type="market">Market Sales</button>
-          <button class="pricing-btn" onclick="setMacroType('both', this)" data-macro-type="both">Both</button>
-        </div>
-      </div>
-      <div id="panel-pricingmacro-body">
-        <div class="pricing-section-title">Price Per Sqft Legend</div>
-        <div class="psf-legend">
-          <div class="grad"></div>
-          <div class="leg-labels"><span>Low $/Sqft</span><span>High $/Sqft</span></div>
-        </div>
-        <div style="margin-top:14px;">
-          <div class="pricing-section-title">About This View</div>
-          <div class="pricing-desc">Each census tract is colored by the median price per square foot of land sales aggregated across all parcels in that tract. Darker reds indicate higher land values. Use the time period and transaction type filters to compare how tract-level land prices have shifted across Philadelphia over time.</div>
-        </div>
-        <div style="margin-top:2px;">
-          <div class="pricing-section-title">Why Census Tracts</div>
-          <div class="pricing-desc">Individual parcels rarely have sales in every time period, making direct comparison unreliable. Aggregating to the census tract level pools enough transactions per unit to produce stable, comparable price signals across all four periods — revealing neighborhood-level appreciation trends.</div>
-        </div>
-        <div style="margin-top:2px;">
-          <div class="pricing-section-title">Transaction Types</div>
-          <div class="pricing-desc"><strong style="color:#ccc;">Vacant Land</strong> — tracts aggregated from parcels with no structures, representing raw land value. <strong style="color:#ccc;">Market Sales</strong> — arm's-length transactions reflecting actual buyer/seller market pricing. <strong style="color:#ccc;">Both</strong> — combined view showing all qualifying transactions for the period.</div>
-        </div>
-        <div style="margin-top:2px; border-top: 1px solid #2a2a2e; padding-top: 12px;">
-          <div class="pricing-section-title">Active Layer</div>
-          <div class="stat-row"><span class="sl">Period</span><span class="sv" id="macro-active-period">Pre-2010</span></div>
-          <div class="stat-row"><span class="sl">Type</span><span class="sv" id="macro-active-type">Vacant Land</span></div>
-        </div>
-      </div>
-    </div>
-    <div id="pricingmacro-tooltip">
-      <div class="tt-address" id="pmtt-tract"></div>
-      <div class="tt-psf" id="pmtt-psf"></div>
-      <div class="tt-count" id="pmtt-count"></div>
-    </div>
-  </div><!-- end view-pricingmacro -->
 
 
 </div>
@@ -1088,161 +1011,6 @@
       if (!pricingMapInitialized) initPricingMap();
       else setTimeout(() => pricingMap.resize(), 50);
     }
-    if (view === 'pricingmacro') {
-      btns[3].classList.add('active');
-      if (!macroMapInitialized) initMacroMap();
-      else setTimeout(() => macroMap.resize(), 50);
-    }
-  }
-
-  // PRICING MACRO MAP
-  let macroMap = null;
-  let macroMapInitialized = false;
-  let activeMacroPeriod = 'pre2010';
-  let activeMacroType = 'vacant';
-
-  const MACRO_TRACT_SOURCE_LAYER = 'price_per_sqft_tracts-07j6j7';
-  const MACRO_PARCEL_SOURCE_LAYER = 'parcel_outlines_timeline-d5e7fm';
-
-  const MACRO_PERIOD_LABELS = { 'pre2010': 'Pre-2010', '20102015': '2010–2015', '20152020': '2015–2020', '20202025': '2020–2025' };
-  const MACRO_PERIOD_FIELD  = { 'pre2010': 'Pre-2010', '20102015': '2010-2015', '20152020': '2015-2020', '20202025': '2020-2025' };
-  const MACRO_TYPE_LABELS   = { 'vacant': 'Vacant Land', 'market': 'Market Sales', 'both': 'Both' };
-
-  function getMacroFilter() {
-    const period = MACRO_PERIOD_FIELD[activeMacroPeriod];
-    const periodFilter = ['==', ['get', 'time_period'], period];
-    if (activeMacroType === 'vacant')  return ['all', periodFilter, ['==', ['get', 'is_vacant'], true]];
-    if (activeMacroType === 'market')  return ['all', periodFilter, ['==', ['get', 'is_market'], true]];
-    return periodFilter; // both
-  }
-
-  function updateMacroLayers() {
-    if (!macroMap || !macroMapInitialized) return;
-    const f = getMacroFilter();
-    try { macroMap.setFilter('macro-tracts-fill', f); } catch(e) {}
-    try { macroMap.setFilter('macro-tracts-outline', f); } catch(e) {}
-    try { macroMap.setFilter('macro-parcels-outline', getMacroParcelFilter()); } catch(e) {}
-    document.getElementById('macro-active-period').textContent = MACRO_PERIOD_LABELS[activeMacroPeriod];
-    document.getElementById('macro-active-type').textContent   = MACRO_TYPE_LABELS[activeMacroType];
-  }
-
-  function getMacroParcelFilter() {
-    const period = MACRO_PERIOD_FIELD[activeMacroPeriod];
-    const periodFilter = ['==', ['get', 'time_period'], period];
-    if (activeMacroType === 'vacant')  return ['all', periodFilter, ['==', ['get', 'is_vacant'], true]];
-    if (activeMacroType === 'market')  return ['all', periodFilter, ['==', ['get', 'is_market'], true]];
-    return periodFilter;
-  }
-
-  function initMacroMap() {
-    macroMap = new mapboxgl.Map({
-      container: 'map-pricingmacro',
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [-75.1652, 39.9526],
-      zoom: 12
-    });
-    macroMap.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
-
-    const macroTooltip = document.getElementById('pricingmacro-tooltip');
-
-    macroMap.on('load', () => {
-
-      // ── Tract fill source + layers ──
-      macroMap.addSource('macro-tracts-src', {
-        type: 'vector',
-        url: 'mapbox://jrigsby123.672kabf9'
-      });
-
-      macroMap.addLayer({
-        id: 'macro-tracts-fill',
-        type: 'fill',
-        source: 'macro-tracts-src',
-        'source-layer': MACRO_TRACT_SOURCE_LAYER,
-        filter: getMacroFilter(),
-        paint: {
-          'fill-color': [
-            'interpolate', ['linear'],
-            ['coalesce', ['get', 'sqrt_ppsf'], 0],
-            0,     '#fff5e6',
-            5,     '#ffcc80',
-            15,    '#ff8c00',
-            30,    '#cc3300',
-            49.18, '#660000'
-          ],
-          'fill-opacity': 0.75
-        }
-      });
-
-      macroMap.addLayer({
-        id: 'macro-tracts-outline',
-        type: 'line',
-        source: 'macro-tracts-src',
-        'source-layer': MACRO_TRACT_SOURCE_LAYER,
-        filter: getMacroFilter(),
-        paint: { 'line-color': '#444', 'line-width': 0.8 }
-      });
-
-      // ── Parcel outline source + layer ──
-      macroMap.addSource('macro-parcels-src', {
-        type: 'vector',
-        url: 'mapbox://jrigsby123.224kdhof'
-      });
-
-      macroMap.addLayer({
-        id: 'macro-parcels-outline',
-        type: 'line',
-        source: 'macro-parcels-src',
-        'source-layer': MACRO_PARCEL_SOURCE_LAYER,
-        minzoom: 14,
-        filter: getMacroParcelFilter(),
-        paint: { 'line-color': '#ffffff', 'line-width': 0.4, 'line-opacity': 0.3 }
-      });
-
-      macroMapInitialized = true;
-    });
-
-    // Tooltip on tract hover
-    macroMap.on('mousemove', (e) => {
-      if (!macroMapInitialized) return;
-      const features = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-tracts-fill'] });
-      if (features.length > 0) {
-        macroMap.getCanvas().style.cursor = 'pointer';
-        const props = features[0].properties;
-        const tract  = props.tract_key || '';
-        const psf    = props.median_ppsf;
-        const count  = props.sale_count;
-        const psfFormatted   = psf   != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
-        const countFormatted = count != null ? count + ' sales' : '';
-        document.getElementById('pmtt-tract').textContent = 'Tract ' + tract;
-        document.getElementById('pmtt-psf').textContent   = psfFormatted;
-        document.getElementById('pmtt-count').textContent = countFormatted;
-        macroTooltip.style.display = 'block';
-        macroTooltip.style.left = (e.point.x + 14) + 'px';
-        macroTooltip.style.top  = (e.point.y - 10) + 'px';
-      } else {
-        macroMap.getCanvas().style.cursor = '';
-        macroTooltip.style.display = 'none';
-      }
-    });
-
-    macroMap.on('mouseleave', () => {
-      macroMap.getCanvas().style.cursor = '';
-      macroTooltip.style.display = 'none';
-    });
-  }
-
-  function setMacroPeriod(period, btn) {
-    document.querySelectorAll('[data-macro-period]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeMacroPeriod = period;
-    updateMacroLayers();
-  }
-
-  function setMacroType(type, btn) {
-    document.querySelectorAll('[data-macro-type]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeMacroType = type;
-    updateMacroLayers();
   }
 
   // MARKET ACTIVITY MAP
