@@ -4,175 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alterra</title>
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js">
-  // PRICING MAP
-  let pricingMap = null;
-  let pricingMapInitialized = false;
-  let activePricingPeriod = 'pre2010';
-  let activePricingType = 'vacant';
-  const PSF_SOURCE_LAYER = 'price_per_sqft_timeline-5qkzqc';
-
-  const ALL_PRICING_LAYERS = [
-    'pre2010vacant','pre2010market','pre2010vacantmarket',
-    '20102015vacant','20102015market','20102015vacantmarket',
-    '20152020vacant','20152020market','20152020vacantmarket',
-    '20202025vacant','20202025market','20202025vacantmarket'
-  ];
-
-  const PERIOD_LABELS = { 'pre2010': 'Pre-2010', '20102015': '2010–2015', '20152020': '2015–2020', '20202025': '2020–2025' };
-  const PERIOD_FIELD_MAP = { 'pre2010': 'pre-2010', '20102015': '2010-2015', '20152020': '2015-2020', '20202025': '2020-2025' };
-  const TYPE_LABELS = { 'vacant': 'Vacant Land', 'market': 'Market Sales', 'vacantmarket': 'Both' };
-
-  function initPricingMap() {
-    pricingMap = new mapboxgl.Map({
-      container: 'map-pricing',
-      style: 'mapbox://styles/jrigsby123/cmncbkjsb001q01qnckjy9l0v',
-      center: [-75.1652, 39.9526],
-      zoom: 12
-    });
-    pricingMap.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
-
-    const pricingTooltip = document.getElementById('pricing-tooltip');
-
-    pricingMap.on('load', () => {
-      updatePricingLayers();
-
-      // Add hover highlight source + layer on top of everything
-      pricingMap.addSource('psf-hover-src', {
-        type: 'vector',
-        url: 'mapbox://jrigsby123.cmncbkjsb001q01qnckjy9l0v'
-      });
-
-      // Hover outline layer — targets whichever layer is visible
-      ALL_PRICING_LAYERS.forEach(layerId => {
-        try {
-          // Add feature-state based hover outline for each layer
-          pricingMap.addLayer({
-            id: 'hover-outline-' + layerId,
-            type: 'line',
-            source: layerId.includes('src') ? 'psf-hover-src' : layerId,
-            'source-layer': PSF_SOURCE_LAYER,
-            layout: { visibility: 'none' },
-            paint: {
-              'line-color': '#ffffff',
-              'line-width': 2.5,
-              'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0]
-            }
-          });
-        } catch(e) {}
-      });
-
-      pricingMapInitialized = true;
-    });
-
-    // Mousemove — tooltip + hover highlight
-    pricingMap.on('mousemove', (e) => {
-      if (!pricingMapInitialized) return;
-      const activeLayerId = activePricingPeriod + activePricingType;
-      const features = pricingMap.queryRenderedFeatures(e.point, { layers: [activeLayerId] });
-
-      if (features.length > 0) {
-        pricingMap.getCanvas().style.cursor = 'pointer';
-        const props = features[0].properties;
-        const address = props.location || '';
-        const psf = props.median_ppsf;
-        const psfFormatted = psf != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
-
-        document.getElementById('ptt-address').textContent = address;
-        document.getElementById('ptt-psf').textContent = psfFormatted;
-        pricingTooltip.style.display = 'block';
-        pricingTooltip.style.left = (e.point.x + 14) + 'px';
-        pricingTooltip.style.top = (e.point.y - 10) + 'px';
-      } else {
-        pricingMap.getCanvas().style.cursor = '';
-        pricingTooltip.style.display = 'none';
-      }
-    });
-
-    pricingMap.on('mouseleave', () => {
-      pricingMap.getCanvas().style.cursor = '';
-      pricingTooltip.style.display = 'none';
-    });
-
-    // Click — show price history in panel
-    pricingMap.on('click', (e) => {
-      if (!pricingMapInitialized) return;
-      const activeLayerId = activePricingPeriod + activePricingType;
-      const clicked = pricingMap.queryRenderedFeatures(e.point, { layers: [activeLayerId] });
-      if (!clicked.length) return;
-
-      const clickedLocation = clicked[0].properties.location;
-      if (!clickedLocation) return;
-
-      // Query all visible features at this point across all periods to build history
-      const allFeatures = pricingMap.queryRenderedFeatures(e.point);
-      const history = {};
-      allFeatures.forEach(f => {
-        if (f.properties.location === clickedLocation && f.properties.time_period && f.properties.median_ppsf != null) {
-          const tp = f.properties.time_period;
-          if (!history[tp]) history[tp] = f.properties.median_ppsf;
-        }
-      });
-
-      // Also query nearby to catch all periods for this parcel
-      const bbox = [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
-      const nearbyFeatures = pricingMap.queryRenderedFeatures(bbox);
-      nearbyFeatures.forEach(f => {
-        if (f.properties.location === clickedLocation && f.properties.time_period && f.properties.median_ppsf != null) {
-          const tp = f.properties.time_period;
-          if (!history[tp]) history[tp] = f.properties.median_ppsf;
-        }
-      });
-
-      // Show selected parcel card
-      const card = document.getElementById('pricing-selected-card');
-      const addrEl = document.getElementById('psc-address');
-      const histEl = document.getElementById('psf-history');
-      addrEl.textContent = clickedLocation;
-      card.style.display = 'block';
-
-      const periodOrder = ['pre-2010', '2010-2015', '2015-2020', '2020-2025'];
-      const periodDisplay = { 'pre-2010': 'Pre-2010', '2010-2015': '2010–2015', '2015-2020': '2015–2020', '2020-2025': '2020–2025' };
-      const activePeriodField = PERIOD_FIELD_MAP[activePricingPeriod];
-
-      let histHTML = '';
-      periodOrder.forEach(period => {
-        const val = history[period];
-        const isActive = period === activePeriodField;
-        const formatted = val != null ? '$' + Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
-        histHTML += '<div class="psf-history-row' + (isActive ? ' phr-active' : '') + '">'
-          + '<span class="phr-period">' + (periodDisplay[period] || period) + '</span>'
-          + '<span class="phr-val">' + formatted + '</span>'
-          + '</div>';
-      });
-      histEl.innerHTML = histHTML;
-    });
-  }
-
-  function updatePricingLayers() {
-    const activeLayer = activePricingPeriod + activePricingType;
-    ALL_PRICING_LAYERS.forEach(layer => {
-      try { pricingMap.setLayoutProperty(layer, 'visibility', layer === activeLayer ? 'visible' : 'none'); } catch(e) {}
-    });
-    document.getElementById('pricing-active-layer').textContent = activeLayer;
-    document.getElementById('pricing-active-period').textContent = PERIOD_LABELS[activePricingPeriod];
-    document.getElementById('pricing-active-type').textContent = TYPE_LABELS[activePricingType];
-  }
-
-  function setPricingLayer(period, btn) {
-    document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activePricingPeriod = period;
-    if (pricingMap && pricingMapInitialized) updatePricingLayers();
-  }
-
-  function setPricingType(type, btn) {
-    document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activePricingType = type;
-    if (pricingMap && pricingMapInitialized) updatePricingLayers();
-  }
-</script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1100,6 +932,8 @@
   let macroMapInitialized = false;
   let activeMacroPeriod = 'pre2010';
   let activeMacroType = 'vacant';
+  let macroHoveredTractId = null;
+  let macroHoveredParcelId = null;
 
   const MACRO_TRACT_SOURCE_LAYER = 'price_per_sqft_tracts-07j6j7';
   const MACRO_PARCEL_SOURCE_LAYER = 'parcel_outlines_timeline-d5e7fm';
@@ -1111,9 +945,10 @@
   function getMacroFilter() {
     const period = MACRO_PERIOD_FIELD[activeMacroPeriod];
     const periodFilter = ['==', ['get', 'time_period'], period];
-    if (activeMacroType === 'vacant')  return ['all', periodFilter, ['==', ['get', 'is_vacant'], true]];
-    if (activeMacroType === 'market')  return ['all', periodFilter, ['==', ['get', 'is_market'], true]];
-    return periodFilter; // both
+    // is_vacant and is_market are stored as strings 'true'/'false' in Mapbox vector tiles
+    if (activeMacroType === 'vacant') return ['all', periodFilter, ['==', ['get', 'is_vacant'], 'true']];
+    if (activeMacroType === 'market') return ['all', periodFilter, ['==', ['get', 'is_market'], 'true']];
+    return periodFilter;
   }
 
   function updateMacroLayers() {
@@ -1121,17 +956,9 @@
     const f = getMacroFilter();
     try { macroMap.setFilter('macro-tracts-fill', f); } catch(e) {}
     try { macroMap.setFilter('macro-tracts-outline', f); } catch(e) {}
-    try { macroMap.setFilter('macro-parcels-outline', getMacroParcelFilter()); } catch(e) {}
+    try { macroMap.setFilter('macro-tracts-hover', f); } catch(e) {}
     document.getElementById('macro-active-period').textContent = MACRO_PERIOD_LABELS[activeMacroPeriod];
     document.getElementById('macro-active-type').textContent   = MACRO_TYPE_LABELS[activeMacroType];
-  }
-
-  function getMacroParcelFilter() {
-    const period = MACRO_PERIOD_FIELD[activeMacroPeriod];
-    const periodFilter = ['==', ['get', 'time_period'], period];
-    if (activeMacroType === 'vacant')  return ['all', periodFilter, ['==', ['get', 'is_vacant'], true]];
-    if (activeMacroType === 'market')  return ['all', periodFilter, ['==', ['get', 'is_market'], true]];
-    return periodFilter;
   }
 
   function initMacroMap() {
@@ -1147,12 +974,14 @@
 
     macroMap.on('load', () => {
 
-      // ── Tract fill source + layers ──
+      // ── Tract source ──
       macroMap.addSource('macro-tracts-src', {
         type: 'vector',
-        url: 'mapbox://jrigsby123.672kabf9'
+        url: 'mapbox://jrigsby123.672kabf9',
+        promoteId: { [MACRO_TRACT_SOURCE_LAYER]: 'tract_key' }
       });
 
+      // Tract fill
       macroMap.addLayer({
         id: 'macro-tracts-fill',
         type: 'fill',
@@ -1173,61 +1002,177 @@
         }
       });
 
+      // Tract outline
       macroMap.addLayer({
         id: 'macro-tracts-outline',
         type: 'line',
         source: 'macro-tracts-src',
         'source-layer': MACRO_TRACT_SOURCE_LAYER,
         filter: getMacroFilter(),
-        paint: { 'line-color': '#444', 'line-width': 0.8 }
+        paint: { 'line-color': '#555', 'line-width': 0.8 }
       });
 
-      // ── Parcel outline source + layer ──
+      // Tract hover outline
+      macroMap.addLayer({
+        id: 'macro-tracts-hover',
+        type: 'line',
+        source: 'macro-tracts-src',
+        'source-layer': MACRO_TRACT_SOURCE_LAYER,
+        filter: getMacroFilter(),
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 2.5,
+          'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0]
+        }
+      });
+
+      // ── Parcel source ──
       macroMap.addSource('macro-parcels-src', {
         type: 'vector',
-        url: 'mapbox://jrigsby123.224kdhof'
+        url: 'mapbox://jrigsby123.224kdhof',
+        promoteId: { [MACRO_PARCEL_SOURCE_LAYER]: 'location' }
       });
 
+      // Parcel fill — transparent but interactive
+      macroMap.addLayer({
+        id: 'macro-parcels-fill',
+        type: 'fill',
+        source: 'macro-parcels-src',
+        'source-layer': MACRO_PARCEL_SOURCE_LAYER,
+        minzoom: 14,
+        paint: { 'fill-color': '#000000', 'fill-opacity': 0 }
+      });
+
+      // Parcel outline
       macroMap.addLayer({
         id: 'macro-parcels-outline',
         type: 'line',
         source: 'macro-parcels-src',
         'source-layer': MACRO_PARCEL_SOURCE_LAYER,
         minzoom: 14,
-        filter: getMacroParcelFilter(),
-        paint: { 'line-color': '#ffffff', 'line-width': 0.4, 'line-opacity': 0.3 }
+        paint: { 'line-color': '#ffffff', 'line-width': 0.5, 'line-opacity': 0.35 }
+      });
+
+      // Parcel hover outline
+      macroMap.addLayer({
+        id: 'macro-parcels-hover',
+        type: 'line',
+        source: 'macro-parcels-src',
+        'source-layer': MACRO_PARCEL_SOURCE_LAYER,
+        minzoom: 14,
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 2.5,
+          'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0]
+        }
       });
 
       macroMapInitialized = true;
     });
 
-    // Tooltip on tract hover
+    // Mousemove — parcel takes priority over tract
     macroMap.on('mousemove', (e) => {
       if (!macroMapInitialized) return;
-      const features = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-tracts-fill'] });
-      if (features.length > 0) {
+      const macroTooltip = document.getElementById('pricingmacro-tooltip');
+
+      // Check parcels first (higher priority, only at zoom 14+)
+      const parcelFeatures = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-parcels-fill'] });
+
+      if (parcelFeatures.length > 0) {
         macroMap.getCanvas().style.cursor = 'pointer';
-        const props = features[0].properties;
-        const tract  = props.tract_key || '';
-        const psf    = props.median_ppsf;
-        const count  = props.sale_count;
-        const psfFormatted   = psf   != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
-        const countFormatted = count != null ? count + ' sales' : '';
-        document.getElementById('pmtt-tract').textContent = 'Tract ' + tract;
-        document.getElementById('pmtt-psf').textContent   = psfFormatted;
-        document.getElementById('pmtt-count').textContent = countFormatted;
+        const props = parcelFeatures[0].properties;
+
+        // Clear tract hover
+        if (macroHoveredTractId !== null) {
+          macroMap.setFeatureState({ source: 'macro-tracts-src', sourceLayer: MACRO_TRACT_SOURCE_LAYER, id: macroHoveredTractId }, { hover: false });
+          macroHoveredTractId = null;
+        }
+
+        // Set parcel hover
+        if (macroHoveredParcelId !== null && macroHoveredParcelId !== parcelFeatures[0].id) {
+          macroMap.setFeatureState({ source: 'macro-parcels-src', sourceLayer: MACRO_PARCEL_SOURCE_LAYER, id: macroHoveredParcelId }, { hover: false });
+        }
+        macroHoveredParcelId = parcelFeatures[0].id;
+        macroMap.setFeatureState({ source: 'macro-parcels-src', sourceLayer: MACRO_PARCEL_SOURCE_LAYER, id: macroHoveredParcelId }, { hover: true });
+
+        document.getElementById('pmtt-tract').textContent = props.location || '—';
+        document.getElementById('pmtt-psf').textContent = '';
+        document.getElementById('pmtt-count').textContent = 'Click to select parcel';
+        macroTooltip.style.display = 'block';
+        macroTooltip.style.left = (e.point.x + 14) + 'px';
+        macroTooltip.style.top  = (e.point.y - 10) + 'px';
+        return;
+      }
+
+      // Clear parcel hover
+      if (macroHoveredParcelId !== null) {
+        macroMap.setFeatureState({ source: 'macro-parcels-src', sourceLayer: MACRO_PARCEL_SOURCE_LAYER, id: macroHoveredParcelId }, { hover: false });
+        macroHoveredParcelId = null;
+      }
+
+      // Fall back to tract
+      const tractFeatures = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-tracts-fill'] });
+      if (tractFeatures.length > 0) {
+        macroMap.getCanvas().style.cursor = 'pointer';
+        const props = tractFeatures[0].properties;
+
+        if (macroHoveredTractId !== null && macroHoveredTractId !== tractFeatures[0].id) {
+          macroMap.setFeatureState({ source: 'macro-tracts-src', sourceLayer: MACRO_TRACT_SOURCE_LAYER, id: macroHoveredTractId }, { hover: false });
+        }
+        macroHoveredTractId = tractFeatures[0].id;
+        macroMap.setFeatureState({ source: 'macro-tracts-src', sourceLayer: MACRO_TRACT_SOURCE_LAYER, id: macroHoveredTractId }, { hover: true });
+
+        const psf   = props.median_ppsf;
+        const count = props.sale_count;
+        document.getElementById('pmtt-tract').textContent = 'Tract ' + (props.tract_key || '');
+        document.getElementById('pmtt-psf').textContent   = psf != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
+        document.getElementById('pmtt-count').textContent = count != null ? count + ' sales' : '';
         macroTooltip.style.display = 'block';
         macroTooltip.style.left = (e.point.x + 14) + 'px';
         macroTooltip.style.top  = (e.point.y - 10) + 'px';
       } else {
         macroMap.getCanvas().style.cursor = '';
         macroTooltip.style.display = 'none';
+        if (macroHoveredTractId !== null) {
+          macroMap.setFeatureState({ source: 'macro-tracts-src', sourceLayer: MACRO_TRACT_SOURCE_LAYER, id: macroHoveredTractId }, { hover: false });
+          macroHoveredTractId = null;
+        }
       }
     });
 
     macroMap.on('mouseleave', () => {
       macroMap.getCanvas().style.cursor = '';
-      macroTooltip.style.display = 'none';
+      document.getElementById('pricingmacro-tooltip').style.display = 'none';
+      if (macroHoveredTractId !== null) {
+        macroMap.setFeatureState({ source: 'macro-tracts-src', sourceLayer: MACRO_TRACT_SOURCE_LAYER, id: macroHoveredTractId }, { hover: false });
+        macroHoveredTractId = null;
+      }
+      if (macroHoveredParcelId !== null) {
+        macroMap.setFeatureState({ source: 'macro-parcels-src', sourceLayer: MACRO_PARCEL_SOURCE_LAYER, id: macroHoveredParcelId }, { hover: false });
+        macroHoveredParcelId = null;
+      }
+    });
+
+    // Click — parcel takes priority
+    macroMap.on('click', (e) => {
+      if (!macroMapInitialized) return;
+      const parcelFeatures = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-parcels-fill'] });
+      if (parcelFeatures.length > 0) {
+        const props = parcelFeatures[0].properties;
+        document.getElementById('pmtt-tract').textContent = props.location || '—';
+        document.getElementById('pmtt-psf').textContent = 'Selected Parcel';
+        document.getElementById('pmtt-count').textContent = '';
+        return;
+      }
+      // Tract click
+      const tractFeatures = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-tracts-fill'] });
+      if (tractFeatures.length > 0) {
+        const props = tractFeatures[0].properties;
+        const psf = props.median_ppsf;
+        document.getElementById('pmtt-tract').textContent = 'Tract ' + (props.tract_key || '');
+        document.getElementById('pmtt-psf').textContent = psf != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
+        document.getElementById('pmtt-count').textContent = (props.sale_count || '') + ' sales';
+      }
     });
   }
 
@@ -1316,33 +1261,29 @@
     pricingMap.on('load', () => {
       updatePricingLayers();
 
-      // Add hover highlight source + layer on top of everything
+      // Add hover outline using correct tileset source
       pricingMap.addSource('psf-hover-src', {
         type: 'vector',
-        url: 'mapbox://jrigsby123.cmncbkjsb001q01qnckjy9l0v'
+        url: 'mapbox://jrigsby123.4d6w4dc3',
+        promoteId: { [PSF_SOURCE_LAYER]: 'location' }
       });
 
-      // Hover outline layer — targets whichever layer is visible
-      ALL_PRICING_LAYERS.forEach(layerId => {
-        try {
-          // Add feature-state based hover outline for each layer
-          pricingMap.addLayer({
-            id: 'hover-outline-' + layerId,
-            type: 'line',
-            source: layerId.includes('src') ? 'psf-hover-src' : layerId,
-            'source-layer': PSF_SOURCE_LAYER,
-            layout: { visibility: 'none' },
-            paint: {
-              'line-color': '#ffffff',
-              'line-width': 2.5,
-              'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0]
-            }
-          });
-        } catch(e) {}
+      pricingMap.addLayer({
+        id: 'psf-hover-outline',
+        type: 'line',
+        source: 'psf-hover-src',
+        'source-layer': PSF_SOURCE_LAYER,
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 2.5,
+          'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0]
+        }
       });
 
       pricingMapInitialized = true;
     });
+
+    let pricingHoveredId = null;
 
     // Mousemove — tooltip + hover highlight
     pricingMap.on('mousemove', (e) => {
@@ -1357,6 +1298,12 @@
         const psf = props.median_ppsf;
         const psfFormatted = psf != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
 
+        if (pricingHoveredId !== null && pricingHoveredId !== features[0].id) {
+          pricingMap.setFeatureState({ source: 'psf-hover-src', sourceLayer: PSF_SOURCE_LAYER, id: pricingHoveredId }, { hover: false });
+        }
+        pricingHoveredId = features[0].id;
+        pricingMap.setFeatureState({ source: 'psf-hover-src', sourceLayer: PSF_SOURCE_LAYER, id: pricingHoveredId }, { hover: true });
+
         document.getElementById('ptt-address').textContent = address;
         document.getElementById('ptt-psf').textContent = psfFormatted;
         pricingTooltip.style.display = 'block';
@@ -1365,12 +1312,20 @@
       } else {
         pricingMap.getCanvas().style.cursor = '';
         pricingTooltip.style.display = 'none';
+        if (pricingHoveredId !== null) {
+          pricingMap.setFeatureState({ source: 'psf-hover-src', sourceLayer: PSF_SOURCE_LAYER, id: pricingHoveredId }, { hover: false });
+          pricingHoveredId = null;
+        }
       }
     });
 
     pricingMap.on('mouseleave', () => {
       pricingMap.getCanvas().style.cursor = '';
       pricingTooltip.style.display = 'none';
+      if (pricingHoveredId !== null) {
+        pricingMap.setFeatureState({ source: 'psf-hover-src', sourceLayer: PSF_SOURCE_LAYER, id: pricingHoveredId }, { hover: false });
+        pricingHoveredId = null;
+      }
     });
 
     // Click — show price history in panel
