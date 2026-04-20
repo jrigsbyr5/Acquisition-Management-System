@@ -362,15 +362,20 @@
     <div id="notebook-tabs">
       <div class="nb-tab active" onclick="switchNbTab('properties')">Properties</div>
       <div class="nb-tab" onclick="switchNbTab('simulations')">Simulations</div>
+      <div class="nb-tab" onclick="switchNbTab('tracts')">Tracts</div>
     </div>
     <div class="nb-content">
       <div class="nb-pane active" id="nb-pane-properties">
-        <div class="nb-empty" id="nb-props-empty"><div class="nb-empty-icon">&#x1F4CD;</div>No saved properties yet.<br>Click a parcel then use &ldquo;Add to Notebook&rdquo;.</div>
+        <div class="nb-empty" id="nb-props-empty">No saved properties yet.<br>Click a parcel then use &ldquo;Add to Notebook&rdquo;.</div>
         <div id="nb-props-list"></div>
       </div>
       <div class="nb-pane" id="nb-pane-simulations">
-        <div class="nb-empty" id="nb-sims-empty"><div class="nb-empty-icon">&#x1F4CB;</div>No saved simulations yet.<br>Run a scenario then use &ldquo;Save Scenario to Notebook&rdquo;.</div>
+        <div class="nb-empty" id="nb-sims-empty">No saved simulations yet.<br>Run a scenario then use &ldquo;Save Scenario to Notebook&rdquo;.</div>
         <div id="nb-sims-list"></div>
+      </div>
+      <div class="nb-pane" id="nb-pane-tracts">
+        <div class="nb-empty" id="nb-tracts-empty">No saved tracts or parcels yet.<br>Click a tract or parcel in Pricing Macro then use &ldquo;Save to Notebook&rdquo;.</div>
+        <div id="nb-tracts-list"></div>
       </div>
     </div>
   </div>
@@ -568,6 +573,17 @@
           <button class="pricing-btn active" onclick="setMacroType('vacant', this)" data-macro-type="vacant">Vacant Land</button>
           <button class="pricing-btn" onclick="setMacroType('market', this)" data-macro-type="market">Market Sales</button>
           <button class="pricing-btn" onclick="setMacroType('both', this)" data-macro-type="both">Both</button>
+        </div>
+      </div>
+      <div id="macro-selected-card" style="display:none; border-bottom:1px solid #2a2a2e; padding:12px 14px; flex-shrink:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div class="psc-label" id="macro-selected-label">Selected Tract</div>
+          <button onclick="closeMacroCard()" style="background:none;border:none;color:#666;font-size:16px;cursor:pointer;padding:0 2px;line-height:1;">&#x2715;</button>
+        </div>
+        <div class="psc-address" id="macro-selected-title">—</div>
+        <div id="macro-selected-details" style="margin-top:6px;"></div>
+        <div style="margin-top:8px;">
+          <button onclick="saveMacroToNotebook()" style="width:100%;padding:8px;background:none;border:1px solid #2a2a2e;border-radius:7px;color:#666;font-size:12px;font-weight:500;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;" id="macro-save-btn">+ Save to Notebook</button>
         </div>
       </div>
       <div id="panel-pricingmacro-body">
@@ -1100,7 +1116,7 @@
 
         document.getElementById('pmtt-tract').textContent = props.location || '—';
         document.getElementById('pmtt-psf').textContent = '';
-        document.getElementById('pmtt-count').textContent = 'Click to select parcel';
+        document.getElementById('pmtt-count').textContent = '';
         macroTooltip.style.display = 'block';
         macroTooltip.style.left = (e.point.x + 14) + 'px';
         macroTooltip.style.top  = (e.point.y - 10) + 'px';
@@ -1162,21 +1178,49 @@
       const parcelFeatures = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-parcels-fill'] });
       if (parcelFeatures.length > 0) {
         const props = parcelFeatures[0].properties;
-        document.getElementById('pmtt-tract').textContent = props.location || '—';
-        document.getElementById('pmtt-psf').textContent = 'Selected Parcel';
-        document.getElementById('pmtt-count').textContent = '';
+        showMacroCard('parcel', props.location || '—', null, null);
         return;
       }
-      // Tract click
       const tractFeatures = macroMap.queryRenderedFeatures(e.point, { layers: ['macro-tracts-fill'] });
       if (tractFeatures.length > 0) {
         const props = tractFeatures[0].properties;
-        const psf = props.median_ppsf;
-        document.getElementById('pmtt-tract').textContent = 'Tract ' + (props.tract_key || '');
-        document.getElementById('pmtt-psf').textContent = psf != null ? '$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/Sqft' : '—';
-        document.getElementById('pmtt-count').textContent = (props.sale_count || '') + ' sales';
+        showMacroCard('tract', 'Tract ' + (props.tract_key || '—'), props.median_ppsf, props.sale_count);
       }
     });
+  }
+
+  let currentMacroSelection = null;
+
+  function showMacroCard(type, title, psf, count) {
+    currentMacroSelection = { type, title, psf, count };
+    document.getElementById('macro-selected-label').textContent = type === 'parcel' ? 'Selected Parcel' : 'Selected Tract';
+    document.getElementById('macro-selected-title').textContent = title;
+    let detailHTML = '';
+    if (psf != null) detailHTML += '<div class="stat-row"><span class="sl">Median $/Sqft</span><span class="sv">$' + Number(psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '</span></div>';
+    if (count != null) detailHTML += '<div class="stat-row"><span class="sl">Sale Count</span><span class="sv">' + count + '</span></div>';
+    document.getElementById('macro-selected-details').innerHTML = detailHTML;
+    document.getElementById('macro-selected-card').style.display = 'block';
+    const btn = document.getElementById('macro-save-btn');
+    btn.textContent = '+ Save to Notebook';
+    btn.style.color = '#666';
+    btn.style.borderColor = '#2a2a2e';
+  }
+
+  function closeMacroCard() {
+    document.getElementById('macro-selected-card').style.display = 'none';
+    currentMacroSelection = null;
+  }
+
+  function saveMacroToNotebook() {
+    if (!currentMacroSelection) return;
+    const already = notebookTracts.some(t => t.title === currentMacroSelection.title);
+    if (already) return;
+    notebookTracts.push(Object.assign({}, currentMacroSelection));
+    const btn = document.getElementById('macro-save-btn');
+    btn.textContent = '✓ Saved';
+    btn.style.color = '#5cb85c';
+    btn.style.borderColor = '#3a7a3a';
+    renderNotebook();
   }
 
   function setMacroPeriod(period, btn) {
@@ -1413,6 +1457,7 @@
   // ── NOTEBOOK ──────────────────────────────────────────────────────────────
   var notebookProperties = [];
   var notebookSimulations = [];
+  var notebookTracts = [];
 
   function openAbout()    { document.getElementById('about-page').classList.add('open'); }
   function closeAbout()   { document.getElementById('about-page').classList.remove('open'); }
@@ -1490,6 +1535,8 @@
     var pl = document.getElementById('nb-props-list');
     var se = document.getElementById('nb-sims-empty');
     var sl = document.getElementById('nb-sims-list');
+    var te = document.getElementById('nb-tracts-empty');
+    var tl = document.getElementById('nb-tracts-list');
     pe.style.display = notebookProperties.length ? 'none' : '';
     pl.innerHTML = notebookProperties.map(function(p) {
       var addr = (p.location || '\u2014').replace(/"/g,'&quot;');
@@ -1520,6 +1567,23 @@
         + '<div class="nb-sim-row nst"><span class="nsl">Total Dev Basis</span><span class="nsv">' + s.totalBasis + '</span></div>'
         + '</div></div></div>';
     }).join('');
+    te.style.display = notebookTracts.length ? 'none' : '';
+    tl.innerHTML = notebookTracts.map(function(t, i) {
+      var typeLabel = t.type === 'parcel' ? 'Parcel' : 'Tract';
+      var psfRow = t.psf != null ? '<div class="nb-prop-meta">Median $/Sqft: $' + Number(t.psf).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '</div>' : '';
+      var countRow = t.count != null ? '<div class="nb-prop-meta">' + t.count + ' sales</div>' : '';
+      return '<div class="nb-property-card">'
+        + '<div><div class="nb-prop-address">' + t.title + '</div>'
+        + '<div class="nb-prop-meta" style="color:#555;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">' + typeLabel + '</div>'
+        + psfRow + countRow + '</div>'
+        + '<button class="nb-prop-remove" onclick="removeTract(' + i + ')">\u2715</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  function removeTract(index) {
+    notebookTracts.splice(index, 1);
+    renderNotebook();
   }
 </script>
 </body>
