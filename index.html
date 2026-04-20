@@ -945,9 +945,12 @@
   function getMacroFilter() {
     const period = MACRO_PERIOD_FIELD[activeMacroPeriod];
     const periodFilter = ['==', ['get', 'time_period'], period];
-    // is_vacant and is_market are stored as strings 'true'/'false' in Mapbox vector tiles
-    if (activeMacroType === 'vacant') return ['all', periodFilter, ['==', ['get', 'is_vacant'], 'true']];
-    if (activeMacroType === 'market') return ['all', periodFilter, ['==', ['get', 'is_market'], 'true']];
+    if (activeMacroType === 'vacant') return ['all', periodFilter,
+      ['any', ['==', ['get', 'is_vacant'], true], ['==', ['get', 'is_vacant'], 'true'], ['==', ['get', 'is_vacant'], 1]]
+    ];
+    if (activeMacroType === 'market') return ['all', periodFilter,
+      ['any', ['==', ['get', 'is_market'], true], ['==', ['get', 'is_market'], 'true'], ['==', ['get', 'is_market'], 1]]
+    ];
     return periodFilter;
   }
 
