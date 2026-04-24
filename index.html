@@ -1520,13 +1520,13 @@
   const SUPABASE_URL = 'https://jumnebcssrqwimioodtt.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1bW5lYmNzc3Jxd2ltaW9vZHR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTM0ODAsImV4cCI6MjA5MjM2OTQ4MH0.RG_AIOJ3ns1r7wiWo3YEZph_LI76xGCoRa_C3E5JcS4';
 
-  async function fetchDevHistory(parcelNumber) {
+  async function fetchDevHistory(address) {
     const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
-    const opaClean = String(parcelNumber).replace(/\.0$/, '').replace(/^0+/, '').padStart(9, '0');
+    const encodedAddress = encodeURIComponent(address);
 
     const [salesRes, permitsRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/Sales%20History?opa_clean=eq.${opaClean}&order=recording_date.desc`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/Permits%20History?opa_clean=eq.${opaClean}&order=permitissuedate.desc`, { headers })
+      fetch(`${SUPABASE_URL}/rest/v1/Sales%20History?street_address=eq.${encodedAddress}&order=recording_date.desc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/Permits%20History?address=eq.${encodedAddress}&order=permitissuedate.desc`, { headers })
     ]);
 
     const sales = salesRes.ok ? await salesRes.json() : [];
@@ -1733,14 +1733,14 @@
       placeholder.innerHTML = '<div class="dh-loading">Loading history…</div>';
       content.style.display = 'none';
 
-      const parcelNumber = p.parcel_number;
-      if (!parcelNumber) {
-        placeholder.innerHTML = '<div class="dh-empty">No parcel ID found for this feature.</div>';
+      const address = p.location;
+      if (!address) {
+        placeholder.innerHTML = 'No address found for this parcel.';
         return;
       }
 
       try {
-        const { sales, permits } = await fetchDevHistory(parcelNumber);
+        const { sales, permits } = await fetchDevHistory(address);
         renderDevHistory(sales, permits);
       } catch(err) {
         placeholder.style.display = 'flex';
