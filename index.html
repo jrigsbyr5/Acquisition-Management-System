@@ -1733,8 +1733,7 @@
       placeholder.innerHTML = '<div class="dh-loading">Loading history…</div>';
       content.style.display = 'none';
 
-      const address = p.location;
-      if (!address) {
+      if (!address || address === '—') {
         placeholder.innerHTML = 'No address found for this parcel.';
         return;
       }
