@@ -24,7 +24,7 @@
     #main { display: flex; flex: 1; overflow: hidden; position: relative; }
     .view { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; }
     .view.active { display: block; }
-    #map, #map-activity, #map-pricing, #map-pricingmacro { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+    #map, #map-activity, #map-pricing, #map-pricingmacro, #map-devhistory { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
 
     #panel-left {
       position: absolute; top: 12px; left: 12px;
@@ -354,7 +354,7 @@
   <button class="nav-btn" onclick="switchView('activity')">MARKET ACTIVITY</button>
   <button class="nav-btn" onclick="switchView('pricing')">PRICING MICRO</button>
   <button class="nav-btn" onclick="switchView('pricingmacro')">PRICING MACRO</button>
-  <button class="nav-btn" onclick="switchView('devhistory')" style="font-size:11px;">DEV HISTORY</button>
+  <button class="nav-btn" onclick="switchView('devhistory')" style="font-size:11px;">DEVELOPMENT HISTORY</button>
   <div id="topbar-right">
     <button class="util-btn" onclick="openAbout()">About</button>
     <button class="util-btn nb-btn" onclick="openNotebook()">Notebook</button>
@@ -655,16 +655,15 @@
       </div>
       <div id="panel-devhistory-body">
         <div id="devhistory-placeholder">
-          <div style="font-size: 24px; margin-bottom: 8px;">🏗</div>
           Click Any Parcel To See Its Construction And Sales History
         </div>
         <div id="devhistory-content" style="display:none;"></div>
       </div>
     </div>
     <div id="devhistory-legend">
-      <div class="leg-title">Permit Activity</div>
+      <div class="leg-title">Development Cycles</div>
       <div class="grad-bar"></div>
-      <div class="leg-labels"><span>0 Permits</span><span>High Activity</span></div>
+      <div class="leg-labels"><span>0 Records</span><span>High Activity</span></div>
     </div>
     <div id="devhistory-tooltip">
       <div class="tt-address" id="dht-address"></div>
@@ -1523,7 +1522,7 @@
 
   async function fetchDevHistory(parcelNumber) {
     const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
-    const opaClean = String(parcelNumber).replace(/\.0$/, '').padStart(9, '0');
+    const opaClean = String(parcelNumber).replace(/\.0$/, '').replace(/^0+/, '').padStart(9, '0');
 
     const [salesRes, permitsRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/Sales%20History?opa_clean=eq.${opaClean}&order=recording_date.desc`, { headers }),
@@ -1555,7 +1554,7 @@
     if (!sales.length && !permits.length) {
       content.style.display = 'none';
       placeholder.style.display = 'flex';
-      placeholder.innerHTML = '<div style="font-size:24px;margin-bottom:8px;">📭</div>No development history found for this parcel.';
+      placeholder.innerHTML = 'No development history found for this parcel.';
       return;
     }
 
